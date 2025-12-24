@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <title>IU0AVT Station Switch</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="loading">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <span>SINCRONIZZAZIONE STATO...</span>
+    </div>
+  </div>
+  
+  <div class="background-grid"></div>
+  
+  <div class="container">
+    <header class="station-header">
+      <div class="header-decoration"></div>
+      <h1>
+        <span class="station-badge">HAM RADIO</span>
+        <span class="station-title">IU0AVT STATION SWITCH</span>
+      </h1>
+      <div class="header-decoration"></div>
+    </header>
+    
+    <div class="time-display">
+      <div class="time-box utc-time">
+        <span class="time-label">UTC</span>
+        <span class="time-value" id="utc-time">--:--:--</span>
+      </div>
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span>SISTEMA ONLINE</span>
+      </div>
+      <div class="time-box local-time">
+        <span class="time-label">LOCAL</span>
+        <span class="time-value" id="local-time">--:--:--</span>
+      </div>
+    </div>
+
+    
+    <!-- MATRIX VIEW -->
+    <div class="matrix-container">
+      <div class="matrix-header">
+        <div class="matrix-title-row">
+          <div class="matrix-title-left">
+            <span class="matrix-icon">⚡</span>
+            <h2>COMMUTAZIONI</h2>
+          </div>
+          <button class="master-off-inline" id="master-off">
+            <span class="master-off-icon">⏻</span>
+            <span>MASTER OFF</span>
+          </button>
+        </div>
+        <span class="matrix-subtitle">Clicca su un incrocio per connettere Radio ↔ Antenna</span>
+      </div>
+
+      <div class="matrix-grid">
+        <!-- Header row with antennas -->
+        <div class="matrix-cell matrix-header-cell corner-cell"></div>
+        <div class="matrix-cell matrix-header-cell antenna-header">
+          <div class="antenna-icon">📡</div>
+          <span class="header-label">VERTICALE</span>
+          <span class="header-sublabel">HF</span>
+        </div>
+        <div class="matrix-cell matrix-header-cell antenna-header">
+          <div class="antenna-icon">📻</div>
+          <span class="header-label">LONG WIRE</span>
+          <span class="header-sublabel">HF</span>
+        </div>
+        <div class="matrix-cell matrix-header-cell antenna-header">
+          <div class="antenna-icon">📶</div>
+          <span class="header-label">V/UHF</span>
+          <span class="header-sublabel">V/UHF</span>
+        </div>
+
+        <!-- RTX HF row -->
+        <div class="matrix-cell matrix-header-cell radio-header">
+          <div class="radio-icon">🔊</div>
+          <span class="header-label">RTX HF</span>
+          <span class="header-sublabel">Transceiver</span>
+        </div>
+        <div class="matrix-cell matrix-switch" data-radio="hf" data-radio-val="1" data-antenna="antenna" data-antenna-val="1">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">RTX-HF → VERT</span>
+        </div>
+        <div class="matrix-cell matrix-switch" data-radio="hf" data-radio-val="1" data-antenna="antenna" data-antenna-val="2">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">RTX-HF → WIRE</span>
+        </div>
+        <div class="matrix-cell matrix-switch disabled">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">N/A</span>
+        </div>
+
+        <!-- SDR row (works on all antennas) -->
+        <div class="matrix-cell matrix-header-cell radio-header">
+          <div class="radio-icon">📟</div>
+          <span class="header-label">SDR</span>
+          <span class="header-sublabel">Receiver</span>
+        </div>
+        <div class="matrix-cell matrix-switch" data-radio="hf" data-radio-val="2" data-antenna="antenna" data-antenna-val="1">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">SDR → VERT</span>
+        </div>
+        <div class="matrix-cell matrix-switch" data-radio="hf" data-radio-val="2" data-antenna="antenna" data-antenna-val="2">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">SDR → WIRE</span>
+        </div>
+        <div class="matrix-cell matrix-switch" data-radio="vuhf" data-radio-val="2" data-antenna="vuhf" data-antenna-val="2">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">SDR → V/UHF</span>
+        </div>
+
+        <!-- RTX V/UHF row -->
+        <div class="matrix-cell matrix-header-cell radio-header">
+          <div class="radio-icon">📱</div>
+          <span class="header-label">RTX V/UHF</span>
+          <span class="header-sublabel">Transceiver</span>
+        </div>
+        <div class="matrix-cell matrix-switch disabled">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">N/A</span>
+        </div>
+        <div class="matrix-cell matrix-switch disabled">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">N/A</span>
+        </div>
+        <div class="matrix-cell matrix-switch" data-radio="vuhf" data-radio-val="1" data-antenna="vuhf" data-antenna-val="1">
+          <div class="switch-indicator"></div>
+          <span class="switch-label">RTX-VHF → V/UHF</span>
+        </div>
+      </div>
+
+      <div class="matrix-legend">
+        <div class="legend-item">
+          <div class="legend-indicator active"></div>
+          <span>Connessione Attiva</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-indicator inactive"></div>
+          <span>Disponibile</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-indicator disabled"></div>
+          <span>Non Compatibile</span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="station-footer">
+      <div class="footer-info">
+        <span>ESP32 SWITCH MATRIX</span>
+        <span class="footer-divider">|</span>
+        <span>IU0AVT</span>
+        <span class="footer-divider">|</span>
+        <span>73 DE IU0AVT</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/script.js"></script>
+</body>
+</html>
