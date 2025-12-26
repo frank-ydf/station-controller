@@ -106,6 +106,107 @@ void handleControl() {
   sendCurrentState();
 }
 
+// ============================================================================
+// NUOVO: API per ATU Controller Integration
+// ============================================================================
+
+// GET /api/antenna/status - Stato antenna HF con relay feedback
+void handleAntennaStatus() {
+  // Leggi stato fisico dei relay HF (B1=relay[2], B2=relay[3], C1=relay[4])
+  bool b1_active = (digitalRead(relayPins[2]) == LOW);
+  bool b2_active = (digitalRead(relayPins[3]) == LOW);
+  bool c1_active = (digitalRead(relayPins[4]) == LOW);
+  
+  // Determina configurazione attuale
+  String selected = "off";
+  bool relay_ok = false;
+  
+  if (state.hf == 1) {
+    // RTX: solo B1 attivo
+    selected = "590";
+    relay_ok = (b1_active && !b2_active && !c1_active);
+  } else if (state.hf == 2) {
+    // SDR: B1+B2+C1 attivi
+    selected = "sdr";
+    relay_ok = (b1_active && b2_active && c1_active);
+  } else {
+    // OFF: tutti inattivi
+    selected = "off";
+    relay_ok = (!b1_active && !b2_active && !c1_active);
+  }
+  
+  // Costruisci JSON response
+  String json = "{";
+  json += "\"selected\":\"" + selected + "\",";
+  json += "\"relay\":{";
+  json += "\"b1\":" + String(b1_active ? 1 : 0) + ",";
+  json += "\"b2\":" + String(b2_active ? 1 : 0) + ",";
+  json += "\"c1\":" + String(c1_active ? 1 : 0);
+  json += "},";
+  json += "\"relay_ok\":" + String(relay_ok ? "true" : "false") + ",";
+  json += "\"hf_state\":" + String(state.hf) + ",";
+  json += "\"antenna_state\":" + String(state.antenna);
+  json += "}";
+  
+  Serial.println("📊 Antenna status: " + json);
+  
+  server.send(200, "application/json", json);
+}
+
+// POST /api/antenna/590 - Switch a TS-590 (HF RTX)
+void handleSwitch590() {
+  Serial.println("🔀 API: Switching to 590 (HF=1)...");
+  
+  updateSystemState("hf", 1);
+  
+  // Verifica relay
+  delay(50); // Breve delay per stabilizzazione
+  
+  bool b1_active = (digitalRead(relayPins[2]) == LOW);
+  bool b2_active = (digitalRead(relayPins[3]) == LOW);
+  bool c1_active = (digitalRead(relayPins[4]) == LOW);
+  bool relay_ok = (b1_active && !b2_active && !c1_active);
+  
+  String json = "{";
+  json += "\"ok\":true,";
+  json += "\"selected\":\"590\",";
+  json += "\"relay_ok\":" + String(relay_ok ? "true" : "false") + ",";
+  json += "\"hf_state\":" + String(state.hf);
+  json += "}";
+  
+  Serial.printf("✅ Switched to 590 (relay_ok=%s)\n", relay_ok ? "true" : "false");
+  
+  server.send(200, "application/json", json);
+}
+
+// POST /api/antenna/sdr - Switch a SDR (HF SDR)
+void handleSwitchSDR() {
+  Serial.println("🔀 API: Switching to SDR (HF=2)...");
+  
+  updateSystemState("hf", 2);
+  
+  // Verifica relay
+  delay(50); // Breve delay per stabilizzazione
+  
+  bool b1_active = (digitalRead(relayPins[2]) == LOW);
+  bool b2_active = (digitalRead(relayPins[3]) == LOW);
+  bool c1_active = (digitalRead(relayPins[4]) == LOW);
+  bool relay_ok = (b1_active && b2_active && c1_active);
+  
+  String json = "{";
+  json += "\"ok\":true,";
+  json += "\"selected\":\"sdr\",";
+  json += "\"relay_ok\":" + String(relay_ok ? "true" : "false") + ",";
+  json += "\"hf_state\":" + String(state.hf);
+  json += "}";
+  
+  Serial.printf("✅ Switched to SDR (relay_ok=%s)\n", relay_ok ? "true" : "false");
+  
+  server.send(200, "application/json", json);
+}
+
+// ============================================================================
+
 void checkButtons() {
   static uint32_t lastCheck = 0;
   static bool lastButtonState[8] = {0};
@@ -145,7 +246,7 @@ void setupNetwork() {
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nConnesso! IP: " + WiFi.localIP());
+    Serial.println("\nConnesso! IP: " + WiFi.localIP().toString());
     if (!MDNS.begin("radio")) {
       Serial.println("Errore mDNS!");
     } else {
@@ -155,7 +256,7 @@ void setupNetwork() {
   } else {
     Serial.println("\nFallito! Avvio AP...");
     WiFi.softAP("Radio_Config", "config123");
-    Serial.println("AP avviato. IP: " + WiFi.softAPIP());
+    Serial.println("AP avviato. IP: " + WiFi.softAPIP().toString());
   }
 }
 
@@ -188,15 +289,27 @@ void setup() {
     while(1);
   }
 
-  // Server Web
+  // Server Web - API esistenti
   server.on("/control", HTTP_ANY, handleControl);
   server.on("/getstate", HTTP_GET, sendCurrentState);
+  
+  // NUOVO: API per ATU Controller
+  server.on("/api/antenna/status", HTTP_GET, handleAntennaStatus);
+  server.on("/api/antenna/590", HTTP_POST, handleSwitch590);
+  server.on("/api/antenna/sdr", HTTP_POST, handleSwitchSDR);
+  
+  // Static files
   server.serveStatic("/", LittleFS, "/index.html");
   server.serveStatic("/style.css", LittleFS, "/style.css");
   server.serveStatic("/script.js", LittleFS, "/script.js");
+  
   server.begin();
 
   Serial.println("Sistema pronto");
+  Serial.println("API ATU enabled:");
+  Serial.println("  GET  /api/antenna/status");
+  Serial.println("  POST /api/antenna/590");
+  Serial.println("  POST /api/antenna/sdr");
 }
 
 void loop() {
